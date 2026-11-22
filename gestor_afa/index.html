@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#172b4d">
+  <title>Gestor AFA</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div id="loginView" class="login-shell">
+    <div class="login-card">
+      <div class="brand-mark">AFA</div>
+      <p class="eyebrow">GESTIÓN DE SOCIOS</p>
+      <h1>Gestor AFA</h1>
+      <p class="muted">Acceso privado para la administración de la asociación.</p>
+      <form id="loginForm">
+        <label>Correo electrónico<input id="loginEmail" type="email" autocomplete="username" required></label>
+        <label>Contraseña<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+        <button class="primary full" type="submit">Entrar</button>
+        <p id="loginError" class="error" role="alert"></p>
+      </form>
+      <p class="tiny muted">El acceso se crea previamente desde el panel de Supabase. No hay registro público.</p>
+    </div>
+  </div>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="side-brand"><div class="brand-mark small">AFA</div><div><strong>Gestor AFA</strong><span>Administración</span></div></div>
+      <nav><a class="nav-link active" href="#socios">▦ <span>Socios</span></a></nav>
+      <div class="sidebar-bottom">
+        <div class="user-chip"><span class="avatar">A</span><div><strong>Administración</strong><span>Cuenta autorizada</span></div></div>
+        <button id="logoutBtn" class="ghost light full">Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><p class="eyebrow">ÁREA DE ADMINISTRACIÓN</p><h1>Socios del AFA</h1></div>
+        <button id="addBtn" class="primary">＋ Añadir socio</button>
+      </header>
+
+      <section class="stats">
+        <article class="stat-card"><span class="stat-icon">◎</span><div><p>Total de socios</p><strong id="totalCount">0</strong></div></article>
+        <article class="stat-card"><span class="stat-icon green">✓</span><div><p>Socios activos</p><strong id="activeCount">0</strong></div></article>
+        <article class="stat-card"><span class="stat-icon amber">↗</span><div><p>Bajas</p><strong id="inactiveCount">0</strong></div></article>
+      </section>
+
+      <section class="panel" id="socios">
+        <div class="panel-heading"><div><h2>Directorio de socios</h2><p class="muted">Consulta y administra las inscripciones del AFA.</p></div></div>
+        <div class="toolbar">
+          <div class="search-wrap"><span>⌕</span><input id="searchInput" type="search" placeholder="Buscar por nombre, email o número..."></div>
+          <select id="statusFilter" aria-label="Filtrar por estado"><option value="all">Todos los estados</option><option value="active">Activos</option><option value="inactive">Bajas</option></select>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>N.º SOCIO</th><th>SOCIO/A</th><th>CONTACTO</th><th>CURSO</th><th>ESTADO</th><th></th></tr></thead>
+          <tbody id="membersBody"><tr><td colspan="6" class="empty">Cargando socios…</td></tr></tbody></table>
+        </div>
+        <div id="tableMessage" class="table-message"></div>
+      </section>
+      <footer>Gestor AFA <span>·</span> Datos privados de la asociación</footer>
+    </main>
+  </div>
+
+  <div id="memberModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <div class="modal-head"><div><p class="eyebrow">FICHA DE SOCIO</p><h2 id="modalTitle">Añadir socio</h2></div><button class="icon-btn" id="closeModal" aria-label="Cerrar">×</button></div>
+      <form id="memberForm">
+        <input id="memberId" type="hidden">
+        <div class="form-grid">
+          <label class="span-2">Nombre y apellidos *<input id="fullName" maxlength="120" required placeholder="Nombre completo"></label>
+          <label>Email *<input id="email" type="email" maxlength="254" required placeholder="nombre@ejemplo.com"></label>
+          <label>Teléfono<input id="phone" type="tel" maxlength="30" placeholder="Teléfono de contacto"></label>
+          <label>Curso escolar de los hijos<input id="course" maxlength="100" placeholder="Ej. I3, 2.º primaria"></label>
+          <label>DNI <span class="optional">· opcional</span><input id="dni" maxlength="20" placeholder="Solo si es necesario"></label>
+          <label class="span-2">Dirección<input id="address" maxlength="220" placeholder="Dirección postal"></label>
+          <label class="span-2">Estado<select id="memberStatus"><option value="active">Activo</option><option value="inactive">Baja</option></select></label>
+        </div>
+        <p class="form-note">Los campos marcados con * son obligatorios. Recoge únicamente los datos personales necesarios para la gestión del AFA.</p>
+        <div class="modal-actions"><button type="button" class="secondary" id="cancelBtn">Cancelar</button><button type="submit" class="primary" id="saveBtn">Guardar socio</button></div>
+        <p id="formError" class="error"></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="detailModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="modal-card detail-card">
+      <div class="modal-head"><div><p class="eyebrow">DETALLE Y CARNET</p><h2 id="detailTitle">Ficha del socio</h2></div><button class="icon-btn" id="closeDetail" aria-label="Cerrar">×</button></div>
+      <div id="memberDetail"></div>
+      <div class="modal-actions wrap-actions">
+        <button id="downloadCardBtn" class="secondary">↓ Descargar carnet PDF</button>
+        <button id="sendCardBtn" class="primary">✉ Enviar carnet por email</button>
+      </div>
+      <p id="sendMessage" class="form-note" aria-live="polite">El envío se realiza únicamente cuando pulses el botón.</p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
