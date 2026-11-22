@@ -1,0 +1,2 @@
+[functions.send-card]
+verify_jwt = true
